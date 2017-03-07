@@ -1,0 +1,2 @@
+# Enlin
+Non-linear hierarchal text editor. Designed for writing reference notes for D&amp;D campaigns.

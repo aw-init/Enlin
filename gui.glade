@@ -14,6 +14,11 @@
       <mime-type>text/xml</mime-type>
     </mime-types>
   </object>
+  <object class="GtkAction" id="newNote">
+    <property name="label" translatable="yes">New</property>
+    <property name="stock_id">gtk-new</property>
+    <signal name="activate" handler="Action_New" swapped="no"/>
+  </object>
   <object class="GtkAction" id="openNote">
     <property name="label" translatable="yes">Open</property>
     <property name="tooltip" translatable="yes">Open a new Note</property>
@@ -25,6 +30,11 @@
     <property name="tooltip" translatable="yes">Quit the Application</property>
     <property name="stock_id">gtk-quit</property>
     <signal name="activate" handler="Action_Quit" swapped="no"/>
+  </object>
+  <object class="GtkAction" id="saveAsNote">
+    <property name="label" translatable="yes">Save As</property>
+    <property name="stock_id">gtk-save-as</property>
+    <signal name="activate" handler="Action_SaveAs" swapped="no"/>
   </object>
   <object class="GtkAction" id="saveNote">
     <property name="label" translatable="yes">Save</property>
@@ -53,6 +63,16 @@
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
                     <child>
+                      <object class="GtkImageMenuItem" id="fileNewMenuItem">
+                        <property name="use_action_appearance">True</property>
+                        <property name="related_action">newNote</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="use_underline">True</property>
+                        <property name="use_stock">True</property>
+                      </object>
+                    </child>
+                    <child>
                       <object class="GtkImageMenuItem" id="fileOpenMenuItem">
                         <property name="label">gtk-open</property>
                         <property name="use_action_appearance">True</property>
@@ -64,7 +84,14 @@
                       </object>
                     </child>
                     <child>
+                      <object class="GtkSeparatorMenuItem" id="fileMenuSeparator">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                      </object>
+                    </child>
+                    <child>
                       <object class="GtkImageMenuItem" id="fileSaveMenuItem">
+                        <property name="label">gtk-save</property>
                         <property name="use_action_appearance">True</property>
                         <property name="related_action">saveNote</property>
                         <property name="visible">True</property>
@@ -75,14 +102,20 @@
                       </object>
                     </child>
                     <child>
-                      <object class="GtkSeparatorMenuItem" id="fileMenuSeparator">
+                      <object class="GtkImageMenuItem" id="fileSaveAsMenuItem">
+                        <property name="label">gtk-save-as</property>
+                        <property name="use_action_appearance">True</property>
+                        <property name="related_action">saveAsNote</property>
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
+                        <property name="use_underline">True</property>
+                        <property name="use_stock">True</property>
                       </object>
                     </child>
                     <child>
                       <object class="GtkImageMenuItem" id="fileQuitMenuItem">
                         <property name="label">gtk-quit</property>
+                        <property name="use_action_appearance">True</property>
                         <property name="related_action">quitApplication</property>
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>

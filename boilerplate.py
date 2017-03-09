@@ -17,21 +17,45 @@ class Project(object):
 		self.block_id = 0
 		self.note = None
 
-	def set_edit(self, bid=0):
-		self.block_id = bid
-	def editing(self):
+	def file_is_open(self):
+		return self.filename != "" and self.note_is_available()
+
+	def block_is_edited(self):
 		return self.block_id > 0
 
-	def is_open(self):
-		return self.note is not None and self.filename != ""
+	def note_is_available(self):
+		return self.note is not None
 
-	def open_project(self, flname):
+	def new_note(self):
+		self.filename = ""
+		self.note = blocks.Note()
+		self.block_id = 0
+
+	def open_note(self, flname):
 		self.filename = flname
 		self.note = blocks.Note.Open(flname)
 
-	def close_project(self):
+	def save_note(self, flname):
+		if self.note_is_available():
+			return self.note.save(flname)
+
+	def close_note(self):
 		self.filename = ""
 		self.note = None
+
+	def stop_edit(self):
+		self.block_id = 0
+
+	def edit_block(self, bid):
+		self.block_id = bid
+
+	def get_block(self, bid):
+		if self.note_is_available():
+			return self.note[bid]
+
+	def get_current_block(self):
+		if self.block_is_edited() and self.note_is_available():
+			return self.get_block(self.block_id)
 	
 
 class Application(Gtk.Application):

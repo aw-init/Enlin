@@ -1,11 +1,20 @@
 import xml.etree.ElementTree as etree
+
+from xml.dom import minidom
+
 import re
+
 class BlockFormatError(RuntimeError):
 	pass
 
 class Note(object):
-	def __init__(self, blocks):
-		self.blocks = blocks
+	def __init__(self, blocks=None):
+		if blocks is not None:
+			self.max_id = max(blocks.keys())
+			self.blocks = blocks
+		else:
+			self.max_id = 1
+			self.blocks = {}
 
 	def __getitem__(self, key):
 		return self.blocks[key]
@@ -13,8 +22,28 @@ class Note(object):
 	def __repr__(self):
 		return 'Note({0})'.format(repr(self.blocks))
 
+	def get_unique_id(self):
+		self.max_id += 1
+		return self.max_id
+
 	def as_dict(self):
 		return [x.as_dict() for x in self.blocks]
+
+	def as_xml(self):
+		document = etree.Element('document')
+		for block in self.blocks.values():
+			block_elem = block.as_xml()
+			document.append(block_elem)
+		return document
+
+	def save(self, flname):
+		xml = self.as_xml()
+		xmlstr = etree.tostring(xml)
+		domtree = minidom.parseString(xmlstr)
+		
+		with open(flname, 'w') as fl:
+			domstr = domtree.toprettyxml(indent="\t")
+			fl.write(domstr)		
 
 	@staticmethod
 	def Open(flname):
@@ -23,7 +52,6 @@ class Note(object):
 	@staticmethod
 	def FromXml(document):
 		assert(document.tag == 'document')
-
 		output = {}
 		for block_elem in document:
 			if block_elem.tag == 'block':
@@ -33,10 +61,6 @@ class Note(object):
 				raise BlockFormatError("Unknown tag document/{0}".format(block_elem.tag))
 
 		return Note(output)
-
-	@staticmethod
-	def Save(note):
-		raise NotImplementedError()
 
 class Block(object):
 	def __init__(self, block_id, title, tags, text):
@@ -50,6 +74,23 @@ class Block(object):
 
 	def as_edit_text(self):
 		return self.title+ '\n' + self.text
+
+	def as_xml(self):
+		block_elem = etree.Element('block')
+		block_elem.set('id', str(self.block_id))
+
+		title = etree.SubElement(block_elem, 'title')
+		title.text = self.title
+
+		for tag in self.tags:
+			tag_elem = etree.SubElement(block_elem, 'tag')
+			tag_elem.text = tag
+
+		text = etree.SubElement(block_elem, 'text')
+		text.text = self.text
+
+		return block_elem
+
 
 	@staticmethod
 	def ParseEditText(text):
@@ -192,6 +233,4 @@ class Tree(object):
 		return output
 if __name__ == '__main__':
 	note = Note.Open("test.xml")
-	tree = Tree.FromNote(note)
-	flat = Tree.Flatten(tree)
-	print(flat)
+	note.save('test2.xml')

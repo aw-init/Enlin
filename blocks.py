@@ -22,10 +22,6 @@ class Note(object):
 	def __repr__(self):
 		return 'Note({0})'.format(repr(self.blocks))
 
-	def get_unique_id(self):
-		self.max_id += 1
-		return self.max_id
-
 	def as_dict(self):
 		return [x.as_dict() for x in self.blocks]
 
@@ -35,6 +31,9 @@ class Note(object):
 			block_elem = block.as_xml()
 			document.append(block_elem)
 		return document
+
+	def add_block(self, block):
+		self.blocks[block.block_id] = block
 
 	def save(self, flname):
 		xml = self.as_xml()
@@ -231,6 +230,16 @@ class Tree(object):
 			Tree.Flatten(child, output, newpath)
 
 		return output
+
+	@staticmethod
+	def TagFromModelIter(model, treeiter):
+		tagname = model.get_value(treeiter, 0)
+		parent = model.iter_parent(treeiter)
+		if parent is not None:
+			above = Tree.TagFromModelIter(model, parent)
+			return '{}/{}'.format(above, tagname)
+		else:
+			return tagname
 if __name__ == '__main__':
 	note = Note.Open("test.xml")
 	note.save('test2.xml')

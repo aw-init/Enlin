@@ -4,6 +4,7 @@ gi.require_version('Gtk', '3.0')
 import sys
 from gi.repository import Gtk, Gdk, GtkSource, Gio, GObject, GdkPixbuf
 import blocks
+import project
 
 """
 # bookmarks
@@ -11,55 +12,7 @@ https://lazka.github.io/pgi-docs/
 http://faq.pygtk.org/index.py?file=faq13.010.htp&req=show
 """
 
-class Project(object):
-	def __init__(self):
-		self.filename =  ""
-		self.block_id = 0
-		self.note = None
-
-	def file_is_open(self):
-		return self.filename != "" and self.note_is_available()
-
-	def block_is_edited(self):
-		return self.block_id > 0
-
-	def note_is_available(self):
-		return self.note is not None
-
-	def new_note(self):
-		self.filename = ""
-		self.note = blocks.Note()
-		self.block_id = 0
-
-	def open_note(self, flname):
-		self.filename = flname
-		self.note = blocks.Note.Open(flname)
-
-	def save_note(self, flname):
-		if self.note_is_available():
-			return self.note.save(flname)
-
-	def close_note(self):
-		self.filename = ""
-		self.note = None
-
-	def stop_edit(self):
-		self.block_id = 0
-
-	def edit_block(self, bid):
-		self.block_id = bid
-
-	def get_block(self, bid):
-		if self.note_is_available():
-			return self.note[bid]
-
-	def get_current_block(self):
-		if self.block_is_edited() and self.note_is_available():
-			return self.get_block(self.block_id)
-	
-
 class Application(Gtk.Application):
-	ModelFormat = [GObject.TYPE_STRING, GObject.TYPE_INT]
 	def __init__(self, gui_flname):
 		super(Application, self).__init__(
 			application_id="app.enlin",
@@ -67,7 +20,7 @@ class Application(Gtk.Application):
 		GObject.type_register(GtkSource.View)
 		self.Gui = None
 		self.GuiPath = gui_flname
-		self.Project = Project()
+		self.Project = project.Project()
 
 	def do_startup(self):
 		Gtk.Application.do_startup(self)
@@ -89,33 +42,22 @@ class Application(Gtk.Application):
 		self.editWindow = self.Gui.get_object("editWindow")
 
 		self.treeWindow = self.Gui.get_object("treeWindow")
-		self.Model = Gtk.TreeStore(*Application.ModelFormat)
 
+		renderer = Gtk.CellRendererText()
+		renderer.connect("edited", self.on_cell_edited)
 		text_column = Gtk.TreeViewColumn(
 			title="Tag",
-			cell_renderer=Gtk.CellRendererText(),
-			text=0)
+			cell_renderer=renderer,
+			text=0,
+			editable=2)
 		self.treeWindow.append_column(text_column)
 
-		self.treeWindow.set_model(self.Model)
+		self.treeWindow.set_model(self.Project.model)
 		self.treeWindow.set_reorderable(True)
-		"""
-		targets = [('tree-row', Gtk.TargetFlags.SAME_WIDGET, 0)]
-		self.treeWindow.enable_model_drag_source(
-			Gdk.ModifierType.BUTTON1_MASK,
-			targets,
-			Gdk.DragAction.COPY)
-		self.treeWindow.drag_source_add_text_targets()
-		self.treeWindow.connect("drag-data-get", self.on_drag_data_get)
-		"""
 		self.treeWindow.connect_after("drag_begin", self.on_drag_begin)
+		self.treeWindow.set_enable_search(False)
 		self.treeContextPopup = self.Gui.get_object('treeContextPopup')
 
-		"""
-		self.treeWindow.enable_model_drag_dest(targets, Gdk.DragAction.COPY)
-		self.treeWindow.drag_dest_add_text_targets()
-		self.treeWindow.connect("drag-data-received", self.on_drag_data_received)
-		"""
 		self.drag_label = Gtk.Label("")
 		self.drag_widget = Gtk.Window(type=Gtk.WindowType.TOPLEVEL)
 		self.drag_widget.set_border_width(0)

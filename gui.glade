@@ -3,6 +3,16 @@
 <interface>
   <requires lib="gtk+" version="3.12"/>
   <requires lib="gtksourceview" version="3.0"/>
+  <object class="GtkAction" id="createNewBlock">
+    <property name="label" translatable="yes">New Block</property>
+    <property name="stock_id">gtk-file</property>
+    <signal name="activate" handler="Action_NewBlock" swapped="no"/>
+  </object>
+  <object class="GtkAction" id="createNewTag">
+    <property name="label" translatable="yes">New Tag</property>
+    <property name="stock_id">gtk-directory</property>
+    <signal name="activate" handler="Action_NewTag" swapped="no"/>
+  </object>
   <object class="GtkAction" id="editSelected">
     <property name="label" translatable="yes">Edit</property>
     <property name="tooltip" translatable="yes">Edit Selected Block(s)</property>
@@ -30,6 +40,64 @@
     <property name="tooltip" translatable="yes">Quit the Application</property>
     <property name="stock_id">gtk-quit</property>
     <signal name="activate" handler="Action_Quit" swapped="no"/>
+  </object>
+  <object class="GtkAction" id="removeSelectedElement">
+    <property name="label" translatable="yes">Remove</property>
+    <property name="stock_id">gtk-remove</property>
+    <signal name="activate" handler="Action_RemoveElement" swapped="no"/>
+  </object>
+  <object class="GtkAction" id="renameElement">
+    <property name="label" translatable="yes">Rename</property>
+    <signal name="activate" handler="Action_Rename" swapped="no"/>
+  </object>
+  <object class="GtkMenu" id="treeContextPopup">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <child>
+      <object class="GtkMenuItem" id="editContextMenuItem">
+        <property name="related_action">editSelected</property>
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="label" translatable="yes">Edit</property>
+        <property name="use_underline">True</property>
+      </object>
+    </child>
+    <child>
+      <object class="GtkMenuItem" id="renameContextMenuItem">
+        <property name="related_action">renameElement</property>
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="label" translatable="yes">Rename</property>
+        <property name="use_underline">True</property>
+      </object>
+    </child>
+    <child>
+      <object class="GtkMenuItem" id="deleteContextMenuItem">
+        <property name="related_action">removeSelectedElement</property>
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="label" translatable="yes">Delete</property>
+        <property name="use_underline">True</property>
+      </object>
+    </child>
+    <child>
+      <object class="GtkMenuItem" id="newBlockContextMenuItem">
+        <property name="related_action">createNewBlock</property>
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="label" translatable="yes">New Block</property>
+        <property name="use_underline">True</property>
+      </object>
+    </child>
+    <child>
+      <object class="GtkMenuItem" id="newTagContextMenuItem">
+        <property name="related_action">createNewTag</property>
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="label" translatable="yes">New Tag</property>
+        <property name="use_underline">True</property>
+      </object>
+    </child>
   </object>
   <object class="GtkAction" id="saveAsNote">
     <property name="label" translatable="yes">Save As</property>
@@ -274,6 +342,7 @@
                     <property name="can_focus">True</property>
                     <property name="enable_grid_lines">both</property>
                     <signal name="button-press-event" handler="on_treeWindow_button_press" swapped="no"/>
+                    <signal name="row-activated" handler="on_treeWindow_row_activated" after="yes" swapped="no"/>
                     <child internal-child="selection">
                       <object class="GtkTreeSelection" id="treeWindowSelection"/>
                     </child>
@@ -313,18 +382,6 @@
             <property name="position">2</property>
           </packing>
         </child>
-      </object>
-    </child>
-  </object>
-  <object class="GtkMenu" id="treeContextPopup">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <child>
-      <object class="GtkMenuItem" id="sampleMenuItem">
-        <property name="visible">True</property>
-        <property name="can_focus">False</property>
-        <property name="label" translatable="yes">Do Something</property>
-        <property name="use_underline">True</property>
       </object>
     </child>
   </object>

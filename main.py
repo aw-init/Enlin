@@ -3,6 +3,9 @@ from gi.repository import Gtk, GLib, GtkSource, Gio, GObject
 import re
 import blocks
 
+def row(s, i=-1, b=False):
+	return [s, i, b]
+
 class EnlinApplication(boilerplate.Application):
 	def __init__(self, gui_path):
 		super(EnlinApplication, self).__init__(gui_path)
@@ -73,7 +76,7 @@ class EnlinApplication(boilerplate.Application):
 
 	def Action_Save(self, action=None):
 		if self.Project.file_is_open():
-			self.SaveNoteToFile(self.Project.filename)
+			self.saveNoteToFile(self.Project.filename)
 
 	def Action_SaveAs(self, action=None):
 		fileChooser = Gtk.FileChooserDialog("Please choose a file",
@@ -88,26 +91,26 @@ class EnlinApplication(boilerplate.Application):
 		response = fileChooser.run()
 		if response == Gtk.ResponseType.OK:
 			flname = fileChooser.get_filename()
-			self.SaveNoteToFile(flname)			
+			self.saveNoteToFile(flname)			
 		fileChooser.destroy()
 
-	def SaveNoteToFile(self, flname):
-		self.CommitChangesToProject()
-		self.Project.save_note(flname)
+	def saveNoteToFile(self, flname):
+		self.commitChangesToProject()
+		self.Project.write_note_to_file(flname)
 
 	def Action_RemoveElement(self, action=None):
 		(model, selected) = self.treeWindow.get_selection().get_selected_rows()
 		for rowpath in selected:
 			treeiter = model.get_iter(rowpath)
 			self.Project.model.remove(treeiter)
-		self.CommitChangesToProject()
+		self.commitChangesToProject()
 	
 	def Action_NewBlock(self, action=None):
 		(model, selected) = self.treeWindow.get_selection().get_selected_rows()
 		if len(selected) > 0:
 			for rowpath in selected:
 				treeiter = model.get_iter(rowpath)
-				tag = blocks.Tree.TagFromModelIter(model, treeiter)
+				tag = blocks.Tag.FromModel(model, treeiter)
 				self._addNewBlock(model, tag, treeiter)
 		else:
 			self._addNewBlock(model, "")
@@ -122,7 +125,7 @@ class EnlinApplication(boilerplate.Application):
 		self.Project.note.add_block(newBlock)
 
 		# update gui
-		model.append(dest, self.Project.row(newBlock.title, new_id))
+		model.append(dest, row(newBlock.get_title(), new_id))
 
 	def Action_NewTag(self, action=None):
 		(model, selected) = self.treeWindow.get_selection().get_selected_rows()
@@ -138,12 +141,14 @@ class EnlinApplication(boilerplate.Application):
 			dest = model.get_iter_first()
 
 		# update gui
-		model.append(dest, self.Project.row(tag))
+		model.append(dest, row(tag))
 		
 
 	def RefreshGui(self):
 		self.RefreshTree()
 		self.RefreshEditWindow()
+		if self.Project.file_is_open():
+			self.mainWindow.set_title("Enlin - {}".format(self.Project.filename))
 
 	def RefreshEditWindow(self):
 		if self.Project.block_is_edited():
@@ -157,7 +162,23 @@ class EnlinApplication(boilerplate.Application):
 			txtbuf = self.editWindow.get_buffer()
 			txtbuf.begin_not_undoable_action()
 			txtbuf.set_text("")
-			txtbuf.end_not_undoable_action()		
+			txtbuf.end_not_undoable_action()
+
+	def RefreshBlockTitles(self, model=None, node=None):
+		if model is None:
+			model = self.Project.model
+		if node is None:
+			node = model.get_iter_first()
+
+		bid = model.get_value(node, 1)
+		if bid > 0:
+			block = self.Project.get_block(bid)
+			model.set_value(node, 0, block.get_title())
+		
+		child = model.iter_children(node)
+		while child is not None:
+			self.RefreshBlockTitles(model, child)
+			child = model.iter_next(child)
 
 	def RefreshTree(self):
 		# warning: will reset opened tags
@@ -169,26 +190,30 @@ class EnlinApplication(boilerplate.Application):
 
 	def _writeTagTree(self, model, note, tree, dest=None):
 		for block_id in tree.values():
-			title = note[block_id].title
-			model.append(dest, self.Project.row(title, block_id))
+			title = note[block_id].get_title()
+			model.append(dest, row(title, block_id))
 
 		for (tag, child) in tree.children():
-			sub = model.append(dest, self.Project.row(tag))
+			sub = model.append(dest, row(tag))
 			self._writeTagTree(model, note, child, sub)
 
-	def CommitChangesToProject(self):
+	def commitChangesToProject(self):
 		if self.Project.note_is_available():
-			flat = self.Project.model_as_flat()
-			for block_id, tags in flat.items():
-				self.Project.get_block(block_id).tags = tags
+			notelink = blocks.NoteLink.FromModel(self.Project.model)
+			for block_id, tag_set in notelink.items():
+				tag_list = list(tag_set)
+				self.Project.set_block_tags(block_id, tag_list)
 
 			if self.Project.block_is_edited():
 				txtbuf = self.editWindow.get_buffer()
 				edit_text = txtbuf.get_text(txtbuf.get_start_iter(), txtbuf.get_end_iter(), True)
 				title, body = blocks.Block.ParseEditText(edit_text)
+
+				self.Project.set_block_contents(None, title, body)
+
 				block = self.Project.get_current_block()
-				block.title = title
-				block.text = body
+
+				self.RefreshBlockTitles()
 
 	def on_treeWindow_button_press(self, tree, arg):
 		if arg.button == 3:
@@ -209,6 +234,10 @@ class EnlinApplication(boilerplate.Application):
 		model = self.Project.model
 		treeiter = model.get_iter(path)
 		model.set_value(treeiter, 2, False)
+		model.set_value(treeiter, 0, text)
+		bid = model.get_value(treeiter, 1)
+		if bid > 0:
+			self.Project.set_block_contents(bid, text, None)
 
 if __name__ == '__main__':
 	app = EnlinApplication("gui.glade")

@@ -7,42 +7,52 @@ import re
 class BlockFormatError(RuntimeError):
 	pass
 
+def pretty_render(xml):
+	xmlstr = etree.tostring(xml)
+	domtree = minidom.parseString(xmlstr)
+	domstr = domtree.toprettyxml(indent="\t")
+	return domstr
+	
+
 class Note(object):
 	def __init__(self, blocks=None):
 		if blocks is not None:
-			self.max_id = max(blocks.keys())
-			self.blocks = blocks
+			self._max_id = max(blocks.keys())
+			self._blocks = blocks
 		else:
-			self.max_id = 1
-			self.blocks = {}
+			self._max_id = 1
+			self._blocks = {}
 
 	def __getitem__(self, key):
-		return self.blocks[key]
+		return self._blocks[key]
 
 	def __repr__(self):
-		return 'Note({0})'.format(repr(self.blocks))
+		return 'Note({0})'.format(repr(self._blocks))
 
 	def as_dict(self):
-		return [x.as_dict() for x in self.blocks]
+		return [x.as_dict() for x in self._blocks]
 
 	def as_xml(self):
 		document = etree.Element('document')
-		for block in self.blocks.values():
+		for block in self._blocks.values():
 			block_elem = block.as_xml()
 			document.append(block_elem)
 		return document
 
+	def __iter__(self):
+		return iter(self._blocks.values())
+
 	def add_block(self, block):
-		self.blocks[block.block_id] = block
+		self._blocks[block.block_id] = block
 
 	def save(self, flname):
-		xml = self.as_xml()
-		xmlstr = etree.tostring(xml)
-		domtree = minidom.parseString(xmlstr)
-		
+		xml = self.as_xml()	
 		with open(flname, 'w') as fl:
-			domstr = domtree.toprettyxml(indent="\t")
-			fl.write(domstr)		
+			fl.write(pretty_render(xml))
+
+	def save_stdout(self):
+		print(pretty_render(self.as_xml()))
+			
 
 	@staticmethod
 	def Open(flname):
@@ -55,38 +65,95 @@ class Note(object):
 		for block_elem in document:
 			if block_elem.tag == 'block':
 				block = Block.FromXml(block_elem)
-				output[block.block_id] = block
+				output[block.get_id()] = block
 			else:
 				raise BlockFormatError("Unknown tag document/{0}".format(block_elem.tag))
 
 		return Note(output)
 
+
+class NoteLink(object):
+	def __init__(self):
+		self._links = {}
+
+	def __iter__(self):
+		return iter(self._links)
+
+	def __getitem__(self, key):
+		return self._links.get(key, set())
+
+	def items(self):
+		return iter(self._links.items())
+
+	def add_link(self, bid, *tags):
+		for tag in tags:
+			if bid not in self._links:
+				self._links[bid] = set()		
+			if tag != "":
+				self._links[bid].add(tag)
+
+	@staticmethod
+	def FromModel(model):
+		tree = Tree.FromModel(model)
+		return NoteLink.FromTree(tree)
+
+	@staticmethod
+	def FromTree(tree, link=None, current_tag=""):
+		link = NoteLink() if link is None else link
+		if current_tag != "":
+			for block_id in tree.values():
+				link.add_link(block_id, current_tag)
+		for name, child in tree.children():
+			new_tag = '{}/{}'.format(current_tag, name)
+			link = NoteLink.FromTree(child, link, new_tag)
+		return link
+
 class Block(object):
 	def __init__(self, block_id, title, tags, text):
-		self.block_id = block_id
-		self.title = title
-		self.tags = list(tags)
-		self.text = text
+		self._block_id = block_id
+		self._title = title
+		self._tags = list(tags)
+		self._text = text
 
 	def __repr__(self):
-		return 'Block(title="{0}")'.format(self.title)
+		return 'Block(title="{0}")'.format(self._title)
+
+	def get_id(self):
+		return self._block_id
+
+	def get_title(self):
+		return self._title
+	def set_contents(self, title=None, text=None):
+		if title is not None:
+			self._title = title
+		if text is not None:
+			self._text = text
+
+	def get_text(self):
+		return self._text
+
+	def has_tags(self):
+		return len(self._tags) > 0
+	def iter_tags(self):
+		return iter(self._tags)
 
 	def as_edit_text(self):
-		return self.title+ '\n' + self.text
+		return self._title+ '\n' + self._text
 
 	def as_xml(self):
 		block_elem = etree.Element('block')
-		block_elem.set('id', str(self.block_id))
+		block_elem.set('id', str(self._block_id))
 
 		title = etree.SubElement(block_elem, 'title')
-		title.text = self.title
+		title.text = self._title
 
-		for tag in self.tags:
+		for tag in self._tags:
+			assert(tag is not None and tag != "")
 			tag_elem = etree.SubElement(block_elem, 'tag')
 			tag_elem.text = tag
 
 		text = etree.SubElement(block_elem, 'text')
-		text.text = self.text
+		text.text = self._text
 
 		return block_elem
 
@@ -121,7 +188,7 @@ class Block(object):
 class Tree(object):
 	def __init__(self):
 		self._blocks = []
-		self._children = {}
+		self._children = {} # tag => block_id
 
 	def __str__(self):
 		blockstr = ','.join(str(x) for x in self._blocks)
@@ -166,80 +233,57 @@ class Tree(object):
 			output[tag] = child.as_hierarchy()
 		return output
 
+	def as_xml(self):
+		elem = etree.Element('node')
+		blocks = ' '.join(str(x) for x in self._blocks)
+		elem.set('blocks', blocks)
+		for child in self._children.values():
+			elem.append(child.as_xml())
+		return elem		
+
 	@staticmethod
 	def FromNote(note):
 		root = Tree()
-		for key, value in note.blocks.items():
-			for tag in value.tags:
-				tagls = tag.split('/')
-				root.add_tag_list(tagls, key)
+		for block in note:
+			if block.has_tags():
+				for tag in block.iter_tags():
+					tagls = tag.split('/')
+					root.add_tag_list(tagls, block.get_id())
+			else:
+				root.add_tag_list([], block.get_id())
 		return root
 
 	@staticmethod
-	def OfModel(model):
-		root = Tree()
-		child = model.get_iter_first()
+	def FromModel(model, mnode=None):
+		tree = Tree()
+		if mnode is None:
+			child = model.get_iter_first()
+		else:
+			child = model.iter_children(mnode)
 		while child is not None:
-			val = model.get_value(child, 1)
-			if val > -1:
-				root.append(val)
-			else:
-				tag = model.get_value(child, 0)
-				root[tag] = Tree.FromModelIter(model, child)
+			block_id = model.get_value(child, 1)
+			if block_id > 0:
+				tree.append(block_id)
+
+			tag = model.get_value(child, 0)
+			if model.iter_has_child(child):
+				tree[tag] = Tree.FromModel(model, child)
+
 			child = model.iter_next(child)
-		return root
+		return tree
 
+class Tag:
 	@staticmethod
-	def FromModelSubtree(model, root_iter):
-		root = Tree()
-		tag = model.get_value(root_iter, 0)
-		root[tag] = Tree.FromModelIter(model, root_iter)
-		return root
-
-	@staticmethod
-	def FromModelIter(model, root_iter):
-		root = Tree()
-		child = model.iter_children(root_iter)
-		while child is not None:
-			val = model.get_value(child, 1)
-			if val > -1:
-				root.append(val)
-			else:
-				tag = model.get_value(child, 0)
-				root[tag] = Tree.FromModelIter(model, child)
-			child = model.iter_next(child)
-		return root
-
-	@staticmethod
-	def Flatten(tree, output=None, path=None):
-		path = path or []
-		output = output if output is not None else {}
-		output_id = id(output)
-
-		values = list(tree.values())
-
-		for block_id in values:
-			pathstr = '/'.join(path)
-			if block_id in output:
-				output[block_id].append(pathstr)
-			else:
-				output[block_id] = [pathstr]
-		
-		for (tag, child) in tree.children():
-			newpath = path + [tag]
-			Tree.Flatten(child, output, newpath)
-
-		return output
-
-	@staticmethod
-	def TagFromModelIter(model, treeiter):
-		tagname = model.get_value(treeiter, 0)
-		parent = model.iter_parent(treeiter)
+	def FromModel(model, node):
+		tagname = model.get_value(node, 0)
+		parent = model.iter_parent(node)
 		if parent is not None:
-			above = Tree.TagFromModelIter(model, parent)
+			above = Tag.FromModel(model, parent)
 			return '{}/{}'.format(above, tagname)
 		else:
 			return tagname
+		
 if __name__ == '__main__':
 	note = Note.Open("test.xml")
-	note.save('test2.xml')
+	note.save_stdout()
+	#note.save('test2.xml')

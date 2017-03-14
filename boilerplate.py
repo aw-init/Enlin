@@ -34,6 +34,7 @@ class Application(Gtk.Application):
 
 		self.mainWindow = self.Gui.get_object("mainWindow")
 		self.mainWindow.set_default_size(800, 600)
+		self.mainWindow.set_title("Enlin - Untitled")
 
 		self.add_window(self.mainWindow)
 		self.mainWindow.show_all()

@@ -8,6 +8,8 @@ class BlockFormatError(RuntimeError):
 
 from xml.dom import minidom
 def pretty_render(xml):
+	if isinstance(xml, etree.ElementTree):
+		xml = xml.getroot()
 	xmlstr = etree.tostring(xml)
 	domtree = minidom.parseString(xmlstr)
 	domstr = domtree.toprettyxml(indent="\t")

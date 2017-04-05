@@ -2,6 +2,7 @@ from gi.repository import Gtk
 import gui
 import snapshot
 import data
+import generate
 
 """
 Add actions here
@@ -78,6 +79,10 @@ class Application(gui.Application):
 			else:
 				self.set_edit_text("")
 		
+	def Render(self, flname):
+		text = generate.render_project(self.Project)
+		with open(flname, 'w') as fl:
+			fl.write(text)
 
 	def updateProjectTagsFromModel(self):
 		tags = {}

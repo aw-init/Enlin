@@ -1,8 +1,8 @@
 import gi
 gi.require_version('Gtk', '3.0')
-
 from gi.repository import Gtk, Gdk, GtkSource, Gio, GObject, GdkPixbuf
 import data
+import resources
 
 class Application(Gtk.Application):
 	def __init__(self):
@@ -20,8 +20,10 @@ class Application(Gtk.Application):
 	def do_activate(self):
 		Gtk.Application.do_activate(self)
 
-		self.Gui = Gtk.Builder()
-		self.Gui.add_from_file(self.GuiPath)
+		glade = resources.read(self.GuiPath)
+		self.Gui = Gtk.Builder.new_from_string(glade, -1)
+		
+		#self.Gui.add_from_file(self.GuiPath)
 
 		self.Clipboard = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
 

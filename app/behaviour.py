@@ -82,7 +82,8 @@ class Application(model.Application):
 			flname = fileChooser.get_filename()
 			self.OpenProject(flname)
 			self.EditBlock(0)
-			self.Gui_UpdateTree(data.Element.FromProject(self.Project))
+			element = data.Element.FromProject(self.Project)
+			self.Gui_Update(element)
 		fileChooser.destroy()
 		self.History.reset()
 
@@ -105,6 +106,18 @@ class Application(model.Application):
 			self.SaveProject(flname)
 		fileChooser.destroy()
 
+	def Action_Render(self, *args):
+		fileChooser = Gtk.FileChooserDialog("Please choose a file",
+			self.MainWindow,
+            Gtk.FileChooserAction.SAVE,
+            (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
+             Gtk.STOCK_OPEN, Gtk.ResponseType.OK))
+
+		response = fileChooser.run()
+		if response == Gtk.ResponseType.OK:
+			flname = fileChooser.get_filename()
+			self.Render(flname)
+		fileChooser.destroy()		
 
 	def Action_NewBlock(self, *args):
 		new_id = self.Project.get_unique_id()

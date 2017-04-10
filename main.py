@@ -5,11 +5,18 @@ import gi
 gi.require_version('Gtk', '3.0')
 
 
-from app import View
-
 def main():
-	app = View()
-	sys.exit(app.run(sys.argv))
+	from app.view import Application
+	app = Application()
+	exitcode = app.run(sys.argv)
+	sys.exit(exitcode)
+
+def test():
+	from app.model import test
+	test()
 
 if __name__ == '__main__':
-	main()
+	if '-t' in sys.argv:
+		test()
+	else:
+		main()

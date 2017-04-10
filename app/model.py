@@ -1,9 +1,9 @@
 from gi.repository import Gtk
 import gui
 import snapshot
-import data
+#import data
 import generate
-
+import api
 """
 Add actions here
 Each action should be atomic, reversable, and independent of the view.
@@ -15,7 +15,7 @@ class InvalidActionError(RuntimeError):
 class Application(gui.Application):
 	def __init__(self):
 		super(Application, self).__init__()
-		self.Project = data.Project()
+		self.Project = api.create_new_project()
 		self.EditedBlockId = 0
 		self.Filename = None
 		self.History = snapshot.History()
@@ -23,6 +23,10 @@ class Application(gui.Application):
 
 	def do_activate(self):
 		super(Application, self).do_activate()
+
+	def NewProject(self):
+		self.Project = api.create_new_project()
+		self.SetFilename()
 
 	def SetFilename(self, flname=None):
 		self.Filename = flname
@@ -32,15 +36,11 @@ class Application(gui.Application):
 			self.MainWindow.set_title("Enlin")	
 
 	def OpenProject(self, flname):
-		self.Project = data.Project.FromFile(flname)
+		self.Project = api.load_project_from_file(flname)
 		self.SetFilename(flname)
 
 	def CloseProject(self):
 		self.NewProject()
-
-	def NewProject(self):
-		self.Project = data.Project()	
-		self.SetFilename()
 
 	def SaveProject(self, flname=None):
 		self.updateProjectTagsFromModel()

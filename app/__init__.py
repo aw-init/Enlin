@@ -1,1 +1,1 @@
-from .behaviour import Application
+from .view import View

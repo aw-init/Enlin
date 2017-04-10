@@ -1,7 +1,8 @@
 import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk, Gdk, GtkSource, Gio, GObject, GdkPixbuf
-import data
+
+import api
 import resources
 
 class Application(Gtk.Application):
@@ -11,7 +12,7 @@ class Application(Gtk.Application):
 		self.Gui = None
 		self.GuiPath = "gui_txt.glade"
 
-		self.tagTree = Gtk.TreeStore(str, int, bool)
+		self.tagTree = api.model()
 		self.Clipboard = None
 
 	def do_startup(self):
@@ -121,7 +122,7 @@ class Application(Gtk.Application):
 			else:
 				child = self.tagTree.iter_children(node)
 				if child is not None:
-					subprefix = data.join(prefix, row[0])
+					subprefix = tagjoin(prefix, row[0])
 					for (tag, subnode) in self.model_iter(subprefix, child):
 						yield (tag, subnode)
 			node = self.tagTree.iter_next(node)
@@ -185,32 +186,7 @@ class Application(Gtk.Application):
 			tmp = self.tagTree.iter_next(insert)
 			self.tagTree.remove(insert)
 			insert = tmp
-				
-		
-	def Test_Gui_UpdateTree(self, element, parent=None):
-		# assume node is the first in a list of elements to correct
-		# assume element has already been checked, and look over children
-		if parent is None:
-			current = self.tagTree.get_iter_first()
-			print element
-		else:
-			current = self.tagTree.iter_children(parent)
-		
-		for child in element.children():
-			if current is None:
-				current = self.tagTree.append(parent)
 
-			self.copy_row(current, child.row)
-
-			if not child.is_block():
-				self.Gui_UpdateTree(child, current)
-
-			current = self.tagTree.iter_next(current)
-
-		while current is not None:
-			tmp = self.tagTree.iter_next(current)
-			self.tagTree.remove(current)
-			current = tmp
 			
 	def find_block_rows(self, block_id, node=None):
 		if node is None:

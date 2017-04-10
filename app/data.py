@@ -339,6 +339,8 @@ def path_to(model, node=None):
 		else:
 			return join(path_from_model(model, parent), name)
 
+
+
 if __name__ == '__main__':
 	project = Project.FromFile("test2.xml")
 	tree = Element.FromProject(project)

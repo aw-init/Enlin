@@ -1,5 +1,6 @@
 import model
-import data
+#import data
+import api
 import snapshot
 from gi.repository import Gtk, Gdk, GtkSource, Gio, GObject, GdkPixbuf
 AUTO_COMMIT_ON_EDIT = True
@@ -23,29 +24,28 @@ class Application(model.Application):
 
 		self.set_keyboard_shortcut("<Control>U", self.debug_undo_manager)
 		self.set_keyboard_shortcut("<Control>P", self.debug_project)
-		self.set_keyboard_shortcut("<Control>T", self.debug_tag)
 
 	def debug_undo_manager(self, *args):
 		print self.History
 	def debug_project(self, *args):
 		print self.Project
-	def debug_tag(self, *args):
-		print data.Element.FromModel(self.tagTree)
 
 	def Action_Commit(self, *args):
 		if self.EditedBlockId > 0:
+			# parse the text in the window and write it to the active block
 			block_id = self.EditedBlockId
 			contents = self.get_edit_text()
+
 			title, text = data.Block.ParseEditableText(contents)
-			block = self.Project.get_block(block_id)
 
 			self.ModifyBlock(block_id, title, text)
  
 	def Action_Edit(self, *args):
+		# get the block associated with the selected row and edit it.
 		if self.EditedBlockId > 0 and AUTO_COMMIT_ON_EDIT:
-			# already saved a snapshot before commit
 			with self.History.not_undoable() as locked:
 				self.Action_Commit()
+
 		model, selected = self.TreeWindow.get_selection().get_selected_rows()
 		if len(selected) > 0:
 			current_path = selected[0]
@@ -58,14 +58,14 @@ class Application(model.Application):
 		self.Action_Edit()	
 
 	def Action_New(self, *args):
+		# create brand new project, and reset the gui, history, and edit window
 		self.NewProject()
-		element = data.Element.FromProject(self.Project)
-		self.Gui_Update(element)
+		self.Gui_Update(data.Element.FromProject(self.Project))
 		self.EditBlock(0)
 		self.History.reset()
 
 	def Action_Open(self, *args):
-		# pick filename
+		# open project from xml, and reset the gui, history, and edit window
 		fileChooser = Gtk.FileChooserDialog("Please choose a file",
 			self.MainWindow,
             Gtk.FileChooserAction.OPEN,
@@ -82,18 +82,20 @@ class Application(model.Application):
 			flname = fileChooser.get_filename()
 			self.OpenProject(flname)
 			self.EditBlock(0)
-			element = data.Element.FromProject(self.Project)
-			self.Gui_Update(element)
+			self.Gui_Update(data.Element.FromProject(self.Project))
 		fileChooser.destroy()
 		self.History.reset()
 
 	def Action_Quit(self, *args):
+		# close the application
 		self.quit()
 
 	def Action_Save(self, *args):
+		# write the current project to xml on disk
 		self.SaveProject()
 
 	def Action_SaveAs(self, *args):
+		# write the current project to xml on disk
 		fileChooser = Gtk.FileChooserDialog("Please choose a file",
 			self.MainWindow,
             Gtk.FileChooserAction.SAVE,
@@ -107,6 +109,7 @@ class Application(model.Application):
 		fileChooser.destroy()
 
 	def Action_Render(self, *args):
+		# write the current project to html on disk
 		fileChooser = Gtk.FileChooserDialog("Please choose a file",
 			self.MainWindow,
             Gtk.FileChooserAction.SAVE,
@@ -120,6 +123,7 @@ class Application(model.Application):
 		fileChooser.destroy()		
 
 	def Action_NewBlock(self, *args):
+		# create new block, insert it into the current project
 		new_id = self.Project.get_unique_id()
 		title = 'Default Title'
 		new_block = data.Block(new_id, title, [None], '')
@@ -141,6 +145,7 @@ class Application(model.Application):
 		self.updateProjectTagsFromModel()
 
 	def Action_RemoveElement(self, *args):
+		# remove selected block from the gui (and project)
 		model, selected = self.TreeWindow.get_selection().get_selected_rows()
 		if len(selected) > 0:
 			current_path = selected[0]
@@ -149,6 +154,7 @@ class Application(model.Application):
 			model.remove(current)
 
 	def Action_NewTag(self, *args):
+		# add new group
 		model, selected = self.TreeWindow.get_selection().get_selected_rows()
 		self.History.snapshot(self, 'new-tag')
 		if len(selected) > 0:
@@ -169,7 +175,6 @@ class Application(model.Application):
 			(start, stop) = selection
 			txtbuffer.delete(start, stop)
 
-	
 	def Action_CopyText(self, *args):
 		txtbuffer = self.EditWindow.get_buffer()
 		selection = txtbuffer.get_selection_bounds()

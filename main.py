@@ -5,10 +5,10 @@ import gi
 gi.require_version('Gtk', '3.0')
 
 
-from app import Application
+from app import View
 
 def main():
-	app = Application()
+	app = View()
 	sys.exit(app.run(sys.argv))
 
 if __name__ == '__main__':

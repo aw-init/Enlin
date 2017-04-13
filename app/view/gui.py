@@ -39,7 +39,6 @@ class Application(Gtk.Application):
 
 		# (model) control how tree is rendered
 		renderer = Gtk.CellRendererText()
-		#renderer.connect("edited", self.on_cell_edited)
 		text_column = Gtk.TreeViewColumn(
 			title="Tag",
 			cell_renderer=renderer,
@@ -47,8 +46,6 @@ class Application(Gtk.Application):
 			editable=2)
 		self.TreeWindow.append_column(text_column)
 
-		#self.TreeWindow.set_reorderable(True)
-		#drag_actions = Gdk.DragAction.DEFAULT | Gdk.DragAction.MOVE
 		drag_actions = Gdk.DragAction.MOVE
 
 		targets = [('text/plain', Gtk.TargetFlags.SAME_WIDGET, KEY_TARGET_ID)]
@@ -61,11 +58,6 @@ class Application(Gtk.Application):
 		
 		self.TreeWindow.connect_after("drag_begin", self.__on_drag_begin)
 		self.TreeWindow.connect('drag-data-get', self.__on_drag_data_get)
-		#self.TreeWindow.connect('drag-data-delete', self.__on_drag_data_delete)
-		#self.TreeWindow.connect('drag-end', self.__on_drag_end)
-
-		#self.TreeWindow.connect('drag-motion', self.__on_drag_motion)
-		#self.TreeWindow.connect('drag-drop', self.__on_drag_drop)
 		self.TreeWindow.connect('drag-data-received', self.__on_drag_data_received)
 
 		self.drag_label = Gtk.Label("")
@@ -106,11 +98,11 @@ class Application(Gtk.Application):
 		if text is not None:
 			key = int(text)
 			store = widget.get_model()
-			self.on_copy_block(store, self.DragSource, drop_dest, key)
+			self.on_drop_block(store, self.DragSource, drop_dest, key)
 		else:
 			raise RuntimeError('view.gui: drag_data_received failed, text is None')
 
-	def on_copy_block(self, store, src, dest, key):
+	def on_drop_block(self, store, src, dest, key):
 		raise NotImplementedError()
 
 	def on_treeWindow_button_press(self, tree, arg):

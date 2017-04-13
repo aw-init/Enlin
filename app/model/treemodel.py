@@ -1,4 +1,5 @@
 from gi.repository import Gtk, Gdk, Gio
+from project import Item, Container
 
 MODEL_TYPE = [str, int, bool]
 
@@ -7,10 +8,12 @@ def create_treemodel():
 
 def get_title(model, i):
 	return model.get_value(i, 0)
+
 def get_key(model, i):
 	return model.get_value(i, 1)
 
 def get_row(node):
+	assert(isinstance(node, Item))
 	return [node.title, node.key, False]
 
 def update_row(model, dest, row):
@@ -71,6 +74,7 @@ def update_treemodel(model, project, parent=None, group=None):
 
 
 def update_element(model, project, group, current=None):
+	assert(isinstance(group, Item))
 	if current is None:
 		current = model.get_iter_first()
 	values = get_row(group)
@@ -85,8 +89,8 @@ def update_element(model, project, group, current=None):
 			update_element(model, project, group, child)
 		current = model.iter_next(current)
 
-
 def update_group_from_model(model, group, first_child):
+	assert(isinstance(group, Container))
 	keys = []
 	current = first_child
 	while current is not None:
@@ -94,4 +98,13 @@ def update_group_from_model(model, group, first_child):
 		keys.append(key)
 		current = model.iter_next(current)
 	group.children = keys
-	
+
+def treeiter(store, it):
+	output = []
+	if it is None:
+		it = store.get_iter_first()
+	while it is not None:
+		row = [store.get_value(it, i) for i in range(len(MODEL_TYPE))]
+		output.append(row)
+		it = store.iter_next(it)
+	return output

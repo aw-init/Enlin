@@ -6,14 +6,18 @@
     <property name="label" translatable="yes">Append</property>
     <signal name="activate" handler="Action_AppendChild" swapped="no"/>
   </object>
-  <object class="GtkAction" id="commitEdits">
-    <property name="label" translatable="yes">Commit</property>
-    <signal name="activate" handler="Action_Commit" swapped="no"/>
+  <object class="GtkAction" id="copyElement">
+    <property name="label" translatable="yes">Copy</property>
+    <signal name="activate" handler="Action_CopyElement" swapped="no"/>
   </object>
   <object class="GtkAction" id="copyText">
     <property name="label" translatable="yes">Copy</property>
     <property name="stock_id">gtk-copy</property>
     <signal name="activate" handler="Action_CopyText" swapped="no"/>
+  </object>
+  <object class="GtkAction" id="cutElement">
+    <property name="label" translatable="yes">Cut</property>
+    <signal name="activate" handler="Action_CutElement" swapped="no"/>
   </object>
   <object class="GtkAction" id="cutText">
     <property name="label" translatable="yes">Cut</property>
@@ -62,6 +66,10 @@
     <property name="stock_id">gtk-open</property>
     <signal name="activate" handler="Action_Open" swapped="no"/>
   </object>
+  <object class="GtkAction" id="pasteElement">
+    <property name="label" translatable="yes">Paste</property>
+    <signal name="activate" handler="Action_PasteElement" swapped="no"/>
+  </object>
   <object class="GtkAction" id="pasteText">
     <property name="label" translatable="yes">Paste</property>
     <property name="stock_id">gtk-paste</property>
@@ -79,17 +87,35 @@
     <signal name="activate" handler="Action_Redo" swapped="no"/>
   </object>
   <object class="GtkAction" id="removeElement">
-    <signal name="activate" handler="Action_RemoveElement" swapped="no"/>
+    <signal name="activate" handler="Action_DeleteElement" swapped="no"/>
   </object>
   <object class="GtkMenu" id="treeContextPopup">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
     <child>
-      <object class="GtkMenuItem" id="editContextMenuItem">
-        <property name="related_action">editSelected</property>
+      <object class="GtkMenuItem" id="cutContextMenuItem">
+        <property name="related_action">cutElement</property>
         <property name="visible">True</property>
         <property name="can_focus">False</property>
-        <property name="label" translatable="yes">_Edit</property>
+        <property name="label" translatable="yes">Cut</property>
+        <property name="use_underline">True</property>
+      </object>
+    </child>
+    <child>
+      <object class="GtkMenuItem" id="copyContextMenuItem">
+        <property name="related_action">copyElement</property>
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="label" translatable="yes">_Copy</property>
+        <property name="use_underline">True</property>
+      </object>
+    </child>
+    <child>
+      <object class="GtkMenuItem" id="pasteContextMenuItem">
+        <property name="related_action">pasteElement</property>
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="label" translatable="yes">_Paste</property>
         <property name="use_underline">True</property>
       </object>
     </child>
@@ -103,11 +129,26 @@
       </object>
     </child>
     <child>
+      <object class="GtkSeparatorMenuItem" id="sepera">
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+      </object>
+    </child>
+    <child>
+      <object class="GtkMenuItem" id="editContextMenuItem">
+        <property name="related_action">editSelected</property>
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="label" translatable="yes">_Edit</property>
+        <property name="use_underline">True</property>
+      </object>
+    </child>
+    <child>
       <object class="GtkMenuItem" id="newChildContextMenuItem">
         <property name="related_action">appendChild</property>
         <property name="visible">True</property>
         <property name="can_focus">False</property>
-        <property name="label" translatable="yes">Append Child</property>
+        <property name="label" translatable="yes">_Append Child</property>
         <property name="use_underline">True</property>
       </object>
     </child>
@@ -116,7 +157,7 @@
         <property name="related_action">insertSibling</property>
         <property name="visible">True</property>
         <property name="can_focus">False</property>
-        <property name="label" translatable="yes">Insert Sibling</property>
+        <property name="label" translatable="yes">_Insert Sibling</property>
         <property name="use_underline">True</property>
       </object>
     </child>
@@ -370,21 +411,6 @@
                 <property name="expand">True</property>
                 <property name="fill">True</property>
                 <property name="position">0</property>
-              </packing>
-            </child>
-            <child>
-              <object class="GtkButton" id="commitButton">
-                <property name="label" translatable="yes">Commit</property>
-                <property name="use_action_appearance">False</property>
-                <property name="related_action">commitEdits</property>
-                <property name="visible">True</property>
-                <property name="can_focus">True</property>
-                <property name="receives_default">True</property>
-              </object>
-              <packing>
-                <property name="expand">True</property>
-                <property name="fill">True</property>
-                <property name="position">1</property>
               </packing>
             </child>
           </object>

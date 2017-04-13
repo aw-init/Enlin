@@ -70,7 +70,7 @@ class SnapshotController(object):
 			if isinstance(future, Insertion) or isinstance(future, Deletion):
 				present = future
 			else:
-				present = Snapshot('~'+instant.name, data)
+				present = Snapshot('~'+future.name, data)
 			self._past.append(present)
 			with self.lock():
 				future.apply(data, undo=False)

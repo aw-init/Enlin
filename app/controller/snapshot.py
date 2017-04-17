@@ -38,7 +38,9 @@ class SnapshotController(object):
 		self.push(Deletion(offset, text))
 
 	def record(self, name, data):
-		self.push(Snapshot(name, data))
+		shot = Snapshot(name, data)
+		#print data.project.json()
+		self.push(shot)
 
 	def push(self, other):
 		if self.can_record():
@@ -146,6 +148,14 @@ class Snapshot(Operation):
 
 	def __str__(self):
 		return self.name
+
+	def json(self):
+		output = {'name' : self.name}
+		output['text'] = self.text
+		output['filename'] = self.filename
+		output['edited'] = self.edited
+		output['project'] = self.project.json()
+		return output
 
 	def apply(self, data, undo=True):
 		data.set_edit_text(self.text)

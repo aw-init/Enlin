@@ -44,7 +44,17 @@ class Project(Container):
 		return dup
 
 	def clean(self):
-		raise NotImplementedError()
+		# remove unreachable blocks
+		reachable = set()
+		inspect = self.children[:]
+		while len(inspect) > 0:
+			key = inspect.pop()
+			reachable.add(key)
+			inspect.extend(self[key].children)
+		
+		all_keys = set(self.items.keys())
+		for key in all_keys.difference( reachable ):
+			del self.items[key]
 		
 
 class Item(Container):

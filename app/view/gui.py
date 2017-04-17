@@ -142,7 +142,7 @@ class Application(Gtk.Application):
 		fileChooser.destroy()
 		return value
 
-	def create_save_file_chooster(self):
+	def create_save_file_chooser(self):
 		fileChooser = Gtk.FileChooserDialog("Please choose a file",
 			self.MainWindow,
             Gtk.FileChooserAction.SAVE,
@@ -156,6 +156,25 @@ class Application(Gtk.Application):
 		fileChooser.destroy()
 		return value
 
+	def create_text_entry_dialog(self, message):
+		dialog = Gtk.MessageDialog(self.MainWindow,
+			Gtk.DialogFlags.MODAL | Gtk.DialogFlags.DESTROY_WITH_PARENT,
+			Gtk.MessageType.QUESTION,
+			Gtk.ButtonsType.OK_CANCEL,
+			None)
+		dialog.set_markup(message)
+
+		entry = Gtk.Entry()
+		dialog.get_content_area().pack_start(entry, True, True, 0)
+
+		dialog.show_all()
+		response = dialog.run()
+		text = entry.get_text()
+		dialog.destroy()
+		if response == Gtk.ResponseType.OK and text != '':
+			return text
+		else:
+			return None
 
 	def set_edit_text(self, text):
 		self.EditWindow.get_buffer().set_text(text, -1)

@@ -14,7 +14,7 @@ def open_xml_resource(flname):
 	text = resources.read(flname)
 	return parse_xml(text)
 
-def parse_xml(text):	
+def parse_xml(text):
 	document = etree.fromstring(text)
 	project = Project()
 	assert(document.tag == 'document')
@@ -57,9 +57,9 @@ def project_as_etree(project):
 	for item in project.items.values():
 		tree = item_as_etree(item)
 		document.append(tree)
-	main = SubElement(document, 'main')
+	main = etree.SubElement(document, 'main')
 	for key in project.children:
-		child = SubElement(main, 'child')
+		child = etree.SubElement(main, 'child')
 		child.set('id', str(key))
 	return document
 

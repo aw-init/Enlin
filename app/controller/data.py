@@ -66,15 +66,14 @@ class DataController(object):
 		self.history.reset()
 		model.update_treemodel(self.treemodel, self.project)
 
-	def CreateElement(self, store, parent, sibling):
+	def CreateElement(self, store, parent, sibling, title='Default'):
 		key = self.project.get_unique_key()
-		item = model.Item(key, 'Default Title', '', [])
-		values = model.get_row(item)
-		self.history.record('create-element/{}'.format(key), self)
-		with self.history.lock():
-			self.project.add_item(item)
-			store.insert_after(parent, sibling, values)
-		model.update_element(self.treemodel, self.project, item)
+		item = model.Item(key, title, '', [])
+		if parent is None:
+			dest = (sibling, Gtk.TreeViewDropPosition.AFTER)
+		else:
+			dest = (parent, Gtk.TreeViewDropPosition.INTO_OR_AFTER)
+		self.AddElement(store, item, source=None, dest_path=dest)
 
 	def RemoveElement(self, store, row):
 		row_key = model.get_key(store, row)
@@ -119,7 +118,7 @@ class DataController(object):
 			rel = Gtk.TreeViewDropPosition.AFTER
 		else:
 			path, rel = dest_path
-			insert = store.get_iter(path)
+			insert = store.get_iter(path) if path is not None else path
 
 		self.history.record('add-element/{}'.format(key), self)
 
@@ -131,10 +130,15 @@ class DataController(object):
 				dest_iter = store.insert_before(None, insert, values)
 			elif rel == Gtk.TreeViewDropPosition.AFTER:
 				dest_iter = store.insert_after(None, insert, values)
+			elif rel == Gtk.TreeViewDropPosition.INTO_OR_AFTER:
+				dest_iter = store.insert_after(insert, None, values)
+			elif rel == Gtk.TreeViewDropPosition.BEFORE_OR_AFTER:
+				dest_iter = store.insert_before(insert, None, values)
 			else:
 				raise NotImplementedError(rel)
 			
 		# what to do with the source
+		# TODO: if the object is not moved, do not record
 		if source is not None:
 			with self.history.lock():
 				store.remove(source)

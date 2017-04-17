@@ -148,7 +148,7 @@
         <property name="related_action">appendChild</property>
         <property name="visible">True</property>
         <property name="can_focus">False</property>
-        <property name="label" translatable="yes">_Append Child</property>
+        <property name="label" translatable="yes">_Append</property>
         <property name="use_underline">True</property>
       </object>
     </child>
@@ -157,7 +157,7 @@
         <property name="related_action">insertSibling</property>
         <property name="visible">True</property>
         <property name="can_focus">False</property>
-        <property name="label" translatable="yes">_Insert Sibling</property>
+        <property name="label" translatable="yes">_New</property>
         <property name="use_underline">True</property>
       </object>
     </child>

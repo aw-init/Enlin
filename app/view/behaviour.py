@@ -16,15 +16,20 @@ class Application(gui.Application):
 		
 		self.set_keyboard_shortcut("<Control>Z", self.Action_Undo)
 		self.set_keyboard_shortcut("<Control>P", self.debug_project)
+		self.set_keyboard_shortcut("<Control>S", self.debug_save)
 		self.set_keyboard_shortcut("<Control>U", self.debug_undo_manager)
+		
 		self.set_keyboard_shortcut("<Control>C", self.on_ctrlc_element)
 		self.set_keyboard_shortcut("<Control>X", self.on_ctrlx_element)
 		self.set_keyboard_shortcut("<Control>V", self.on_ctrlv_element)
-
 		self.Data.Open()
 
 	def debug_undo_manager(self, *args):
 		self.Data.history.debug()
+
+	def debug_save(self, *args):
+		self.Data.project.clean()
+
 	def debug_project(self, *args):
 		self.Data.project.debug()
 
@@ -65,7 +70,8 @@ class Application(gui.Application):
 		if len(selected) > 0:
 			current_path = selected[0]
 			parent = store.get_iter(current_path)
-		self.Data.CreateElement(store, parent, None)
+		title = self.create_text_entry_dialog('Enter block title:')
+		self.Data.CreateElement(store, parent, None, title)
 
 	def Action_CopyElement(self, *args):
 		store, selected = self.TreeWindow.get_selection().get_selected_rows()
@@ -129,7 +135,8 @@ class Application(gui.Application):
 		if len(selected) > 0:
 			current_path = selected[0]
 			sibling = store.get_iter(current_path)
-		self.Data.CreateElement(store, None, sibling)
+		title = self.create_text_entry_dialog('Enter block title:')
+		self.Data.CreateElement(store, None, sibling, title)
 
 	def Action_New(self, *args):
 		self.Data.open_project()
@@ -161,7 +168,7 @@ class Application(gui.Application):
 		self.Data.Redo()
 
 	def Action_Render(self, *args):
-		flname = self.create_save_file_chooster()
+		flname = self.create_save_file_chooser()
 		if flname is not None:
 			self.Data.Render(flname)
 
@@ -169,7 +176,7 @@ class Application(gui.Application):
 		self.Data.Save()
 
 	def Action_SaveAs(self, *args):
-		flname = self.create_save_file_chooster()
+		flname = self.create_save_file_chooser()
 		if flname is not None:
 			self.Data.Save(flname)
 
